@@ -28,6 +28,9 @@ export const apiClient = {
   getExamples() {
     return request('/example');
   },
+  getEvents(){
+    return request('/events');
+  },
   createExample(example) {
     return request('/example', {
       method: 'POST',

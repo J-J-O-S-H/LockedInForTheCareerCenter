@@ -15,6 +15,9 @@ function App() {
   const [examplesError, setExamplesError] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [formStatus, setFormStatus] = useState('');
+  const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState('');
 
   async function loadHealth() {
     setHealthLoading(true);
@@ -44,6 +47,19 @@ function App() {
       setExamplesLoading(false);
     }
   }
+  async function loadEvents() {
+    setEventsLoading(true);
+    setEventsError('');
+
+    try {
+      const data = await apiClient.getEvents();
+      setEvents(data);
+    } catch (error) {
+      setEventsError(error.message);
+    } finally {
+      setEventsLoading(false);
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -62,6 +78,7 @@ function App() {
   useEffect(() => {
     loadHealth();
     loadExamples();
+    loadEvents();
   }, []);
 
   const statusLabel = healthLoading
@@ -122,7 +139,34 @@ function App() {
             ))}
           </div>
         </div>
+        <div className="panel">
+          <div className="panel-header">
+            <div>
+              <p className="eyebrow">GET /api/events</p>
+              <h2>Events</h2>
+            </div>
 
+            <button type="button" onClick={loadEvents} disabled={eventsLoading}>
+              {eventsLoading ? 'Loading' : 'Refresh events'}
+            </button>
+          </div>
+
+          {eventsError && <p className="error-text">{eventsError}</p>}
+
+          <div className="example-list">
+            {events.length === 0 && !eventsLoading && (
+              <p className="muted">No events available.</p>
+            )}
+
+            {events.map((event) => (
+              <article className="example-item" key={event.id}>
+                <h3>{event.title}</h3>
+                <p>{event.location}</p>
+                <small>{new Date(event.eventDate).toLocaleString()}</small>
+              </article>
+            ))}
+          </div>
+        </div>
         <form className="panel form-panel" onSubmit={handleSubmit}>
           <div>
             <p className="eyebrow">POST /api/example</p>
