@@ -16,6 +16,7 @@ function App() {
   const [form, setForm] = useState(emptyForm);
   const [formStatus, setFormStatus] = useState('');
   const [events, setEvents] = useState([]);
+  const [registeredEvents, setRegisteredEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsError, setEventsError] = useState('');
 
@@ -60,7 +61,20 @@ function App() {
       setEventsLoading(false);
     }
   }
+  async function handleRegisterForEvent(eventId) {
+    try {
+      const updatedEvent = await apiClient.registerForEvent(eventId);
 
+      setEvents((currentEvents) =>
+        currentEvents.map((event) =>
+          event.id === updatedEvent.id ? updatedEvent : event)
+      );
+      setRegisteredEvents((currentEvents) => [...currentEvents, eventId]);
+      alert('You have successfully signed up for this event.');
+    } catch (error) {
+      alert(error.message);
+    }
+  }
   async function handleSubmit(event) {
     event.preventDefault();
     setFormStatus('Saving example...');
@@ -162,7 +176,25 @@ function App() {
               <article className="example-item" key={event.id}>
                 <h3>{event.title}</h3>
                 <p>{event.location}</p>
+                <p className="muted">
+                  {event.currentVolunteers} / {event.maxVolunteers} volunteers registered
+                </p>
+                <p className="muted">
+                  {event.availableSpots} spots available
+                </p>
                 <small>{new Date(event.eventDate).toLocaleString()}</small>
+
+                <button
+                  type="button"
+                  onClick={() => handleRegisterForEvent(event.id)}
+                  disabled={event.availableSpots <= 0 || registeredEvents.includes(event.id)}
+                >
+                  {registeredEvents.includes(event.id)
+                    ? 'Registered'
+                    : event.availableSpots <= 0
+                      ? 'Event full'
+                      : 'Register'}
+                </button>
               </article>
             ))}
           </div>

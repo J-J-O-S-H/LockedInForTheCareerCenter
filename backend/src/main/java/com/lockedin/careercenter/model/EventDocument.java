@@ -16,15 +16,21 @@ public class EventDocument {
 
     private String location;
 
+    private int maxVolunteers;
+
+    private int currentVolunteers;
+
     @Indexed
     private Instant eventDate;
 
     public EventDocument() {
     }
 
-    public EventDocument(String title, String location, Instant eventDate) {
+    public EventDocument(String title, String location, int maxVolunteers, int currentVolunteers, Instant eventDate) {
         this.title = title;
         this.location = location;
+        this.maxVolunteers = maxVolunteers;
+        this.currentVolunteers = currentVolunteers;
         this.eventDate = eventDate;
     }
 
@@ -50,6 +56,22 @@ public class EventDocument {
 
     public void setLocation(String location) {
         this.location = location;
+    }
+
+    public int getMaxVolunteers() {
+        return maxVolunteers;
+    }
+
+    public void setMaxVolunteers(int maxVolunteers) {
+        this.maxVolunteers = maxVolunteers;
+    }
+
+    public int getCurrentVolunteers() {
+        return currentVolunteers;
+    }
+
+    public void setCurrentVolunteers(int currentVolunteers) {
+        this.currentVolunteers = currentVolunteers;
     }
 
     public Instant getEventDate() {

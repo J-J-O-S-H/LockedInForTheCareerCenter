@@ -18,7 +18,8 @@ public class EventService {
     }
 
     public List<EventResponse> getEvents() {
-        return eventRepository.findAllByOrderByEventDateAsc(PageRequest.of(0, 20))
+        return eventRepository
+                .findAllByOrderByEventDateAsc(PageRequest.of(0, 20))
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -29,6 +30,28 @@ public class EventService {
                 event.getId(),
                 event.getTitle(),
                 event.getLocation(),
+                event.getMaxVolunteers(),
+                event.getCurrentVolunteers(),
+                event.getMaxVolunteers() - event.getCurrentVolunteers(),
                 event.getEventDate());
+    }
+
+    public EventResponse registerVolunteer(String eventId) {
+        EventDocument event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        boolean loggedIn = true;
+
+        if (!loggedIn) {
+            throw new RuntimeException("Volunteer must be logged in");
+        }
+
+        if (event.getCurrentVolunteers() >= event.getMaxVolunteers()) {
+            throw new RuntimeException("Event is full");
+        }
+
+        event.setCurrentVolunteers(event.getCurrentVolunteers() + 1);
+
+        return toResponse(eventRepository.save(event));
     }
 }

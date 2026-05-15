@@ -6,7 +6,9 @@ public record EventResponse(
         String id,
         String title,
         String location,
-        Instant eventDate){
-
+        int maxVolunteers,
+        int currentVolunteers,
+        int availableSpots,
+        Instant eventDate) {
 }
 
