@@ -8,12 +8,16 @@
 
 This application enables students, volunteers, employers, and administrators to interact through a unified platform. Users can create accounts, browse and register for events, and access relevant career center information, while administrators can manage and prioritize events efficiently.
 
+Link: http://localhost:5173/
 ---
 
 ## Key Features
 
 -  **User Authentication**
   - Account registration and login for multiple roles (student, volunteer, admin, employer)
+  - Returning user login is implemented with seeded credentials for first-time setup:
+    - Email: `returninguser@example.com`
+    - Password: `Password123!`
 
 -  **Event Management**
   - Create, edit, and prioritize events (admin)

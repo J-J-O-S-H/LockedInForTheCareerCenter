@@ -121,6 +121,14 @@ button:disabled {
   padding: 1.25rem;
 }
 
+.dashboard-panel {
+  position: sticky;
+  top: 1rem;
+  z-index: 10;
+  box-shadow: 0 10px 30px rgba(31, 41, 55, 0.08);
+  background: #ffffff;
+}
+
 .panel-header {
   align-items: flex-start;
   display: flex;

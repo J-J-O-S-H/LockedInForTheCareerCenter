@@ -41,5 +41,17 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify(example)
     });
+  },
+  login(credentials) {
+    return request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials)
+    });
+  },
+  loginWithGoogle(token) {
+    return request('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ token })
+    });
   }
 };
