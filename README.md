@@ -14,6 +14,9 @@ This application enables students, volunteers, employers, and administrators to 
 
 -  **User Authentication**
   - Account registration and login for multiple roles (student, volunteer, admin, employer)
+  - Returning user login is implemented with seeded credentials for first-time setup:
+    - Email: `returninguser@example.com`
+    - Password: `Password123!`
 
 -  **Event Management**
   - Create, edit, and prioritize events (admin)
