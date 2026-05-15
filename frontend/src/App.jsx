@@ -32,6 +32,10 @@ function App() {
   const [examplesError, setExamplesError] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [formStatus, setFormStatus] = useState('');
+  const [events, setEvents] = useState([]);
+  const [registeredEvents, setRegisteredEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState('');
   const [loginForm, setLoginForm] = useState(emptyLoginForm);
   const [loginStatus, setLoginStatus] = useState('');
   const [auth, setAuth] = useState(getSavedAuth);
@@ -62,6 +66,35 @@ function App() {
       setExamplesError(error.message);
     } finally {
       setExamplesLoading(false);
+    }
+  }
+
+  async function loadEvents() {
+    setEventsLoading(true);
+    setEventsError('');
+
+    try {
+      const data = await apiClient.getEvents();
+      setEvents(data);
+    } catch (error) {
+      setEventsError(error.message);
+    } finally {
+      setEventsLoading(false);
+    }
+  }
+
+  async function handleRegisterForEvent(eventId) {
+    try {
+      const updatedEvent = await apiClient.registerForEvent(eventId);
+
+      setEvents((currentEvents) =>
+        currentEvents.map((event) =>
+          event.id === updatedEvent.id ? updatedEvent : event)
+      );
+      setRegisteredEvents((currentEvents) => [...currentEvents, eventId]);
+      alert('You have successfully signed up for this event.');
+    } catch (error) {
+      alert(error.message);
     }
   }
 
@@ -121,6 +154,7 @@ function App() {
 
   useEffect(() => {
     loadHealth();
+    loadEvents();
   }, []);
 
   useEffect(() => {
@@ -226,6 +260,52 @@ function App() {
               <p>Successful login grants access to your dashboard and example content.</p>
             </section>
           )}
+
+          <div className="panel">
+            <div className="panel-header">
+              <div>
+                <p className="eyebrow">GET /api/events</p>
+                <h2>Events</h2>
+              </div>
+              <button type="button" onClick={loadEvents} disabled={eventsLoading}>
+                {eventsLoading ? 'Loading' : 'Refresh events'}
+              </button>
+            </div>
+
+            {eventsError && <p className="error-text">{eventsError}</p>}
+
+            <div className="example-list">
+              {events.length === 0 && !eventsLoading && (
+                <p className="muted">No events available.</p>
+              )}
+
+              {events.map((event) => (
+                <article className="example-item" key={event.id}>
+                  <h3>{event.title}</h3>
+                  <p>{event.location}</p>
+                  <p className="muted">
+                    {event.currentVolunteers} / {event.maxVolunteers} volunteers registered
+                  </p>
+                  <p className="muted">
+                    {event.availableSpots} spots available
+                  </p>
+                  <small>{new Date(event.eventDate).toLocaleString()}</small>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRegisterForEvent(event.id)}
+                    disabled={event.availableSpots <= 0 || registeredEvents.includes(event.id)}
+                  >
+                    {registeredEvents.includes(event.id)
+                      ? 'Registered'
+                      : event.availableSpots <= 0
+                        ? 'Event full'
+                        : 'Register'}
+                  </button>
+                </article>
+              ))}
+            </div>
+          </div>
 
           {auth.isAuthenticated && (
             <div className="panel">

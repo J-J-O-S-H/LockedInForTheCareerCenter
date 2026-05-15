@@ -1,9 +1,20 @@
 :root {
-  color: #1f2937;
-  background: #f5f7fb;
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  --font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --color-background: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #6b7280;
+  --color-border: #d8dee9;
+  --color-accent: #0f766e;
+  --color-accent-hover: #115e59;
+  --color-warning: #b45309;
+  --color-error: #b91c1c;
+  color: var(--color-text-primary);
+  background: var(--color-background);
+  font-family: var(--font-family);
   line-height: 1.5;
 }
 
@@ -25,7 +36,7 @@ textarea {
 button {
   border: 0;
   border-radius: 6px;
-  background: #0f766e;
+  background: var(--color-accent);
   color: #ffffff;
   cursor: pointer;
   font-weight: 700;
@@ -34,7 +45,7 @@ button {
 }
 
 button:hover:not(:disabled) {
-  background: #115e59;
+  background: var(--color-accent-hover);
 }
 
 button:disabled {
@@ -54,20 +65,20 @@ button:disabled {
 }
 
 .intro h1 {
-  color: #111827;
+  color: var(--color-text-primary);
   font-size: clamp(2rem, 6vw, 4rem);
   line-height: 1;
   margin: 0.35rem 0 1rem;
 }
 
 .intro p:last-child {
-  color: #4b5563;
+  color: var(--color-text-secondary);
   font-size: 1.12rem;
   margin: 0;
 }
 
 .eyebrow {
-  color: #b45309;
+  color: var(--color-warning);
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -77,8 +88,8 @@ button:disabled {
 
 .status-panel,
 .panel {
-  background: #ffffff;
-  border: 1px solid #d8dee9;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   box-shadow: 0 14px 40px rgba(31, 41, 55, 0.08);
 }
@@ -94,7 +105,7 @@ button:disabled {
 
 .status-panel h2,
 .panel h2 {
-  color: #111827;
+  color: var(--color-text-primary);
   font-size: 1.35rem;
   line-height: 1.2;
   margin: 0.25rem 0 0;
@@ -138,7 +149,7 @@ button:disabled {
 }
 
 .example-item h3 {
-  color: #111827;
+  color: var(--color-text-primary);
   font-size: 1rem;
   margin: 0 0 0.35rem;
 }
@@ -149,11 +160,11 @@ button:disabled {
 
 .example-item small,
 .muted {
-  color: #6b7280;
+  color: var(--color-text-muted);
 }
 
 .error-text {
-  color: #b91c1c;
+  color: var(--color-error);
   font-weight: 700;
   margin-bottom: 0;
 }
@@ -175,7 +186,7 @@ input,
 textarea {
   border: 1px solid #cbd5e1;
   border-radius: 6px;
-  color: #111827;
+  color: var(--color-text-primary);
   padding: 0.75rem;
   width: 100%;
 }
