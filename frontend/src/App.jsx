@@ -24,24 +24,49 @@ const viewToPath = {
   'create-event': '/events/create'
 };
 
+const APP_BASE_PATH = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+
+function withBasePath(path) {
+  if (!APP_BASE_PATH) {
+    return path;
+  }
+
+  if (path === '/') {
+    return `${APP_BASE_PATH}/`;
+  }
+
+  return `${APP_BASE_PATH}${path}`;
+}
+
+function stripBasePath(pathname) {
+  if (!APP_BASE_PATH || !pathname.startsWith(APP_BASE_PATH)) {
+    return pathname;
+  }
+
+  const strippedPath = pathname.slice(APP_BASE_PATH.length);
+  return strippedPath || '/';
+}
+
 function getViewFromPath(pathname) {
-  if (pathname === '/dashboard' || pathname === '/') {
+  const appPath = stripBasePath(pathname);
+
+  if (appPath === '/dashboard' || appPath === '/') {
     return 'home';
   }
 
-  if (pathname === '/login') {
+  if (appPath === '/login') {
     return 'login';
   }
 
-  if (pathname === '/register') {
+  if (appPath === '/register') {
     return 'register';
   }
 
-  if (pathname === '/events/create') {
+  if (appPath === '/events/create') {
     return 'create-event';
   }
 
-  if (pathname === '/events') {
+  if (appPath === '/events') {
     return 'events';
   }
 
@@ -64,7 +89,7 @@ function App() {
   const eventFeedbackTimerRef = useRef(null);
 
   function updateView(nextView, { replace = false } = {}) {
-    const nextPath = viewToPath[nextView] || '/';
+    const nextPath = withBasePath(viewToPath[nextView] || '/');
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
     if (currentPath !== nextPath) {
@@ -320,8 +345,9 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const appPath = stripBasePath(window.location.pathname);
     const normalizedView = getViewFromPath(window.location.pathname);
-    if (window.location.pathname === '/dashboard') {
+    if (appPath === '/dashboard') {
       navigate('home', { replace: true });
     } else {
       setView(normalizedView);
