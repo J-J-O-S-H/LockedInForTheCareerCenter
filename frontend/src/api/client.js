@@ -18,7 +18,9 @@ async function request(path, options = {}) {
 
   if (!response.ok) {
     const message = body?.message || body?.error || `Request failed with status ${response.status}`;
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
 
   return body;
@@ -38,6 +40,12 @@ export const apiClient = {
       body: JSON.stringify(event)
     });
   },
+  deleteEvent(eventId, token) {
+    return request(`/events/${eventId}`, {
+      method: 'DELETE',
+      authToken: token
+    });
+  },
   registerForEvent(eventId, token) {
     return request(`/events/${eventId}/registrations`, {
       method: 'POST',
@@ -46,12 +54,6 @@ export const apiClient = {
   },
   withdrawFromEvent(eventId, token) {
     return request(`/events/${eventId}/registrations/me`, {
-      method: 'DELETE',
-      authToken: token
-    });
-  },
-  deleteEvent(eventId, token) {
-    return request(`/events/${eventId}`, {
       method: 'DELETE',
       authToken: token
     });
