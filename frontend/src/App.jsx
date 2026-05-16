@@ -14,6 +14,15 @@ const emptyRegistrationForm = {
   password: ''
 };
 
+const emptyEventForm = {
+  title: '',
+  description: '',
+  location: '',
+  eventDateTime: '',
+  maxVolunteers: '5',
+  priority: 'MEDIUM'
+};
+
 function getSavedAuth() {
   try {
     const saved = window.localStorage.getItem('lockedin-auth');
@@ -34,6 +43,11 @@ function App() {
   const [loginStatus, setLoginStatus] = useState('');
   const [registrationForm, setRegistrationForm] = useState(emptyRegistrationForm);
   const [registrationStatus, setRegistrationStatus] = useState('');
+  const [myRegistrations, setMyRegistrations] = useState([]);
+  const [myRegistrationsStatus, setMyRegistrationsStatus] = useState('');
+  const [eventSignupStatus, setEventSignupStatus] = useState('');
+  const [eventForm, setEventForm] = useState(emptyEventForm);
+  const [eventFormStatus, setEventFormStatus] = useState('');
   const [auth, setAuth] = useState(getSavedAuth);
 
   async function loadHealth() {
@@ -65,6 +79,25 @@ function App() {
     }
   }
 
+  async function loadMyRegistrations(token = auth.token) {
+    if (!token) {
+      setMyRegistrations([]);
+      setMyRegistrationsStatus('');
+      return;
+    }
+
+    setMyRegistrationsStatus('Loading your registered events...');
+
+    try {
+      const data = await apiClient.getMyRegistrations(token);
+      setMyRegistrations(data);
+      setMyRegistrationsStatus('');
+    } catch (error) {
+      setMyRegistrations([]);
+      setMyRegistrationsStatus(error.message);
+    }
+  }
+
   async function refreshCurrentUser(token) {
     try {
       const user = await apiClient.getCurrentUser(token);
@@ -84,9 +117,11 @@ function App() {
       setAuth({ user: response.user, token: response.token });
       setLoginForm(emptyLoginForm);
       setLoginStatus(response.message);
+      await loadMyRegistrations(response.token);
     } catch (error) {
       setLoginStatus(error.message);
       setAuth({ user: null, token: null });
+      setMyRegistrations([]);
     }
   }
 
@@ -100,13 +135,112 @@ function App() {
       setRegistrationForm(emptyRegistrationForm);
       setRegistrationStatus(response.message);
       setLoginStatus('');
+      await loadMyRegistrations(response.token);
     } catch (error) {
       setRegistrationStatus(error.message);
     }
   }
 
+  async function handleCreateEvent(event) {
+    event.preventDefault();
+    setEventFormStatus('Creating event...');
+
+    try {
+      const eventDateTime = new Date(eventForm.eventDateTime).toISOString();
+      const createdEvent = await apiClient.createEvent({
+        ...eventForm,
+        eventDateTime,
+        maxVolunteers: Number(eventForm.maxVolunteers)
+      }, auth.token);
+
+      setEvents((currentEvents) => [createdEvent, ...currentEvents]);
+      setEventForm(emptyEventForm);
+      setEventFormStatus('Event created.');
+    } catch (error) {
+      setEventFormStatus(error.message);
+    }
+  }
+
+  async function handleRegisterForEvent(eventItem) {
+    if (!auth.token) {
+      setEventSignupStatus('Please sign in before registering for an event.');
+      return;
+    }
+
+    if (auth.user?.role !== 'VOLUNTEER') {
+      setEventSignupStatus('Only volunteer accounts can register for events.');
+      return;
+    }
+
+    if (eventItem.availableSpots <= 0) {
+      setEventSignupStatus('This event is full.');
+      return;
+    }
+
+    setEventSignupStatus(`Registering for ${eventItem.title}...`);
+
+    try {
+      const registration = await apiClient.registerForEvent(eventItem.id, auth.token);
+      setEventSignupStatus(`Registered for ${registration.event.title}.`);
+      await loadEvents();
+      await loadMyRegistrations(auth.token);
+    } catch (error) {
+      setEventSignupStatus(error.message);
+    }
+  }
+
+  async function handleWithdrawFromEvent(registration) {
+    if (!auth.token) {
+      setEventSignupStatus('Please sign in before withdrawing from an event.');
+      return;
+    }
+
+    if (auth.user?.role !== 'VOLUNTEER') {
+      setEventSignupStatus('Only volunteer accounts can withdraw from volunteer registrations.');
+      return;
+    }
+
+    setEventSignupStatus(`Withdrawing from ${registration.event.title}...`);
+
+    try {
+      const response = await apiClient.withdrawFromEvent(registration.eventId, auth.token);
+      setEventSignupStatus(response.message);
+      await loadEvents();
+      await loadMyRegistrations(auth.token);
+    } catch (error) {
+      setEventSignupStatus(error.message);
+    }
+  }
+
+  async function handleDeleteEvent(eventItem) {
+    if (!auth.token) {
+      setEventSignupStatus('Please sign in before deleting an event.');
+      return;
+    }
+
+    if (auth.user?.role !== 'ADMIN') {
+      setEventSignupStatus('Only admin accounts can delete events.');
+      return;
+    }
+
+    setEventSignupStatus(`Deleting ${eventItem.title}...`);
+
+    try {
+      const response = await apiClient.deleteEvent(eventItem.id, auth.token);
+      setEventSignupStatus(response.message);
+      await loadEvents();
+      if (auth.token) {
+        await loadMyRegistrations(auth.token);
+      }
+    } catch (error) {
+      setEventSignupStatus(error.message);
+    }
+  }
+
   function handleLogout() {
     setAuth({ user: null, token: null });
+    setMyRegistrations([]);
+    setEventSignupStatus('');
     setLoginStatus('You have been signed out.');
   }
 
@@ -116,6 +250,7 @@ function App() {
 
     if (auth.token) {
       refreshCurrentUser(auth.token);
+      loadMyRegistrations(auth.token);
     }
   }, []);
 
@@ -132,6 +267,7 @@ function App() {
     : health
       ? `${health.status} / ${health.database}`
       : 'Unavailable';
+  const registeredEventIds = new Set(myRegistrations.map((registration) => registration.eventId));
 
   return (
     <main className="app-shell">
@@ -168,6 +304,24 @@ function App() {
             </button>
           </div>
           <p className="muted">JWT auth is active for protected API requests.</p>
+          {myRegistrationsStatus && <p className="muted">{myRegistrationsStatus}</p>}
+          {myRegistrations.length > 0 && (
+            <div className="registration-list">
+              <p className="eyebrow">My registered events</p>
+              {myRegistrations.map((registration) => (
+                <article className="compact-item" key={registration.id}>
+                  <strong>{registration.event.title}</strong>
+                  <span>{new Date(registration.event.eventDateTime).toLocaleString()}</span>
+                  <span>{registration.status} / {registration.event.status}</span>
+                  {auth.user?.role === 'VOLUNTEER' && registration.status === 'REGISTERED' && (
+                    <button type="button" onClick={() => handleWithdrawFromEvent(registration)}>
+                      Withdraw
+                    </button>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
@@ -293,6 +447,10 @@ function App() {
           </div>
 
           {eventsError && <p className="error-text">{eventsError}</p>}
+          {eventSignupStatus && <p className="muted">{eventSignupStatus}</p>}
+          {auth.user && auth.user.role !== 'VOLUNTEER' && (
+            <p className="muted">Event sign-up is available to volunteer accounts.</p>
+          )}
 
           <div className="item-list">
             {events.length === 0 && !eventsLoading && (
@@ -301,17 +459,127 @@ function App() {
 
             {events.map((event) => (
               <article className="list-item" key={event.id}>
-                <h3>{event.title}</h3>
-                <p>{event.location}</p>
+                <div className="item-heading">
+                  <h3>{event.title}</h3>
+                  <span>{event.priority}</span>
+                </div>
+                <p>{event.description}</p>
+                <p className="muted">{event.location}</p>
                 <p className="muted">
                   {event.currentVolunteers} / {event.maxVolunteers} volunteers registered
                 </p>
                 <p className="muted">{event.availableSpots} spots available</p>
-                <small>{new Date(event.eventDate).toLocaleString()}</small>
+                <small>{new Date(event.eventDateTime).toLocaleString()}</small>
+                {auth.user?.role === 'VOLUNTEER' && (
+                  <div className="action-row">
+                    <button
+                      type="button"
+                      onClick={() => handleRegisterForEvent(event)}
+                      disabled={event.availableSpots <= 0 || registeredEventIds.has(event.id)}
+                    >
+                      {registeredEventIds.has(event.id)
+                        ? 'Registered'
+                        : event.availableSpots <= 0
+                          ? 'Full'
+                          : 'Sign up'}
+                    </button>
+                  </div>
+                )}
+                {auth.user?.role === 'ADMIN' && (
+                  <div className="action-row">
+                    <button type="button" onClick={() => handleDeleteEvent(event)}>
+                      Delete event
+                    </button>
+                  </div>
+                )}
               </article>
             ))}
           </div>
         </section>
+
+        {auth.user?.role === 'ADMIN' && (
+          <section className="panel form-panel">
+            <div>
+              <p className="eyebrow">POST /api/events</p>
+              <h2>Create event</h2>
+            </div>
+
+            <form onSubmit={handleCreateEvent}>
+              <label>
+                Title
+                <input
+                  name="title"
+                  value={eventForm.title}
+                  onChange={(event) => setEventForm({ ...eventForm, title: event.target.value })}
+                  required
+                  placeholder="Career Fair"
+                />
+              </label>
+
+              <label>
+                Description
+                <textarea
+                  name="description"
+                  value={eventForm.description}
+                  onChange={(event) => setEventForm({ ...eventForm, description: event.target.value })}
+                  required
+                  placeholder="Describe the event"
+                />
+              </label>
+
+              <label>
+                Location
+                <input
+                  name="location"
+                  value={eventForm.location}
+                  onChange={(event) => setEventForm({ ...eventForm, location: event.target.value })}
+                  required
+                  placeholder="University Union"
+                />
+              </label>
+
+              <label>
+                Date and time
+                <input
+                  type="datetime-local"
+                  name="eventDateTime"
+                  value={eventForm.eventDateTime}
+                  onChange={(event) => setEventForm({ ...eventForm, eventDateTime: event.target.value })}
+                  required
+                />
+              </label>
+
+              <label>
+                Maximum volunteers
+                <input
+                  type="number"
+                  name="maxVolunteers"
+                  min="1"
+                  value={eventForm.maxVolunteers}
+                  onChange={(event) => setEventForm({ ...eventForm, maxVolunteers: event.target.value })}
+                  required
+                />
+              </label>
+
+              <label>
+                Priority
+                <select
+                  name="priority"
+                  value={eventForm.priority}
+                  onChange={(event) => setEventForm({ ...eventForm, priority: event.target.value })}
+                  required
+                >
+                  <option value="HIGH">High</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="LOW">Low</option>
+                </select>
+              </label>
+
+              <button type="submit">Create event</button>
+              {eventFormStatus && <p className="muted">{eventFormStatus}</p>}
+            </form>
+          </section>
+        )}
       </section>
     </main>
   );

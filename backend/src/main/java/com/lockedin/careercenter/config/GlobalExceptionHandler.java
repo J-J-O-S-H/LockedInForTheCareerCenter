@@ -5,7 +5,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.lockedin.careercenter.dto.ErrorResponse;
+import com.lockedin.careercenter.exception.ApiException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -38,5 +40,16 @@ public class GlobalExceptionHandler {
                 "Send valid JSON with the expected fields.",
                 Map.of(),
                 Instant.now());
+    }
+
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ErrorResponse> handleApiException(ApiException exception) {
+        return ResponseEntity
+                .status(exception.getStatus())
+                .body(new ErrorResponse(
+                        exception.getStatus().getReasonPhrase(),
+                        exception.getMessage(),
+                        Map.of(),
+                        Instant.now()));
     }
 }
