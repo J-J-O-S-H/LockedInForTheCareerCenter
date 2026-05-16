@@ -11,5 +11,6 @@ spring:
 app:
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
-  google:
-    client-id: ${GOOGLE_CLIENT_ID:your-google-client-id-here}
+  jwt:
+    secret: ${APP_JWT_SECRET:local-dev-secret-change-before-production-locked-in-career-center}
+    expiration-ms: ${APP_JWT_EXPIRATION_MS:86400000}

@@ -35,23 +35,4 @@ public class EventService {
                 event.getMaxVolunteers() - event.getCurrentVolunteers(),
                 event.getEventDate());
     }
-
-    public EventResponse registerVolunteer(String eventId) {
-        EventDocument event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
-
-        boolean loggedIn = true;
-
-        if (!loggedIn) {
-            throw new RuntimeException("Volunteer must be logged in");
-        }
-
-        if (event.getCurrentVolunteers() >= event.getMaxVolunteers()) {
-            throw new RuntimeException("Event is full");
-        }
-
-        event.setCurrentVolunteers(event.getCurrentVolunteers() + 1);
-
-        return toResponse(eventRepository.save(event));
-    }
 }
