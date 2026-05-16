@@ -18,6 +18,7 @@ import com.lockedin.careercenter.model.EventDocument;
 import com.lockedin.careercenter.model.EventPriority;
 import com.lockedin.careercenter.model.EventRegistrationDocument;
 import com.lockedin.careercenter.model.EventRegistrationStatus;
+import com.lockedin.careercenter.model.EventStatus;
 import com.lockedin.careercenter.model.UserRole;
 import com.lockedin.careercenter.repository.EventRegistrationRepository;
 import com.lockedin.careercenter.repository.EventRepository;
@@ -186,6 +187,24 @@ class EventRegistrationServiceTests {
         assertEquals("volunteer-1", registrations.get(0).userId());
         assertEquals("event-1", registrations.get(0).event().id());
         assertEquals(3, registrations.get(0).event().availableSpots());
+    }
+
+    @Test
+    void currentUserRegistrationsExcludeDeletedEventsAndPreserveRegistrationHistory() {
+        EventRegistrationDocument registration = registration("registration-1", "event-1", "volunteer-1");
+        EventDocument deletedEvent = event("event-1", Instant.now().plusSeconds(3600), 5, 2);
+        deletedEvent.setStatus(EventStatus.DELETED);
+
+        when(registrationRepository.findByUserIdAndStatusOrderByRegisteredAtDesc(
+                "volunteer-1",
+                EventRegistrationStatus.REGISTERED)).thenReturn(List.of(registration));
+        when(eventRepository.findAllById(List.of("event-1"))).thenReturn(List.of(deletedEvent));
+
+        List<EventRegistrationResponse> registrations =
+                registrationService.getCurrentUserRegistrations("volunteer-1");
+
+        assertEquals(0, registrations.size());
+        verify(registrationRepository, never()).delete(any(EventRegistrationDocument.class));
     }
 
     @Test

@@ -218,18 +218,47 @@ class EventControllerSecurityTests {
     }
 
     @Test
+    void adminCanRegisterForEvent() throws Exception {
+        Instant eventDateTime = Instant.now().plusSeconds(3600);
+        JwtPrincipal principal = new JwtPrincipal("admin-1", "admin@example.com", UserRole.ADMIN);
+        when(jwtService.verify("admin-token")).thenReturn(principal);
+        when(eventRegistrationService.registerForEvent("event-1", principal))
+                .thenReturn(registrationResponse(
+                        eventDateTime,
+                        "admin-1",
+                        "admin@example.com"));
+
+        mockMvc.perform(post("/api/events/event-1/registrations")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin-token"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.eventId").value("event-1"))
+                .andExpect(jsonPath("$.userId").value("admin-1"))
+                .andExpect(jsonPath("$.status").value("REGISTERED"));
+    }
+
+    @Test
     void registerForEventFailsWithoutJwt() throws Exception {
         mockMvc.perform(post("/api/events/event-1/registrations"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void registerForEventFailsForNonVolunteerRole() throws Exception {
+    void registerForEventFailsForStudentRole() throws Exception {
         JwtPrincipal principal = new JwtPrincipal("student-1", "student@example.com", UserRole.STUDENT);
         when(jwtService.verify("student-token")).thenReturn(principal);
 
         mockMvc.perform(post("/api/events/event-1/registrations")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer student-token"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void registerForEventFailsForEmployerRole() throws Exception {
+        JwtPrincipal principal = new JwtPrincipal("employer-1", "employer@example.com", UserRole.EMPLOYER);
+        when(jwtService.verify("employer-token")).thenReturn(principal);
+
+        mockMvc.perform(post("/api/events/event-1/registrations")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer employer-token"))
                 .andExpect(status().isForbidden());
     }
 
@@ -247,18 +276,31 @@ class EventControllerSecurityTests {
     }
 
     @Test
+    void adminCanWithdrawFromEvent() throws Exception {
+        JwtPrincipal principal = new JwtPrincipal("admin-1", "admin@example.com", UserRole.ADMIN);
+        when(jwtService.verify("admin-token")).thenReturn(principal);
+        when(eventRegistrationService.withdrawFromEvent("event-1", principal))
+                .thenReturn(new ActionResponse("Registration withdrawn.", Instant.now()));
+
+        mockMvc.perform(delete("/api/events/event-1/registrations/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Registration withdrawn."));
+    }
+
+    @Test
     void withdrawFromEventFailsWithoutJwt() throws Exception {
         mockMvc.perform(delete("/api/events/event-1/registrations/me"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void withdrawFromEventFailsForNonVolunteerRole() throws Exception {
-        JwtPrincipal principal = new JwtPrincipal("admin-1", "admin@example.com", UserRole.ADMIN);
-        when(jwtService.verify("admin-token")).thenReturn(principal);
+    void withdrawFromEventFailsForStudentRole() throws Exception {
+        JwtPrincipal principal = new JwtPrincipal("student-1", "student@example.com", UserRole.STUDENT);
+        when(jwtService.verify("student-token")).thenReturn(principal);
 
         mockMvc.perform(delete("/api/events/event-1/registrations/me")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin-token"))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer student-token"))
                 .andExpect(status().isForbidden());
     }
 
@@ -281,12 +323,19 @@ class EventControllerSecurityTests {
     }
 
     private EventRegistrationResponse registrationResponse(Instant eventDateTime) {
+        return registrationResponse(eventDateTime, "volunteer-1", "volunteer@example.com");
+    }
+
+    private EventRegistrationResponse registrationResponse(
+            Instant eventDateTime,
+            String userId,
+            String userEmail) {
         Instant now = Instant.now();
         return new EventRegistrationResponse(
                 "registration-1",
                 "event-1",
-                "volunteer-1",
-                "volunteer@example.com",
+                userId,
+                userEmail,
                 EventRegistrationStatus.REGISTERED,
                 now,
                 now,

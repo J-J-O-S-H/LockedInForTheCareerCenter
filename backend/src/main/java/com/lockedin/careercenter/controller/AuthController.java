@@ -38,9 +38,12 @@ public class AuthController {
             AuthResponse response = userService.register(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalStateException ex) {
+            String message = "An account with this email already exists.".equals(ex.getMessage())
+                    ? "An account with this email already exists. Try logging in instead."
+                    : ex.getMessage();
             ErrorResponse error = new ErrorResponse(
                     "Conflict",
-                    ex.getMessage(),
+                    message,
                     Map.of(),
                     Instant.now());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(error);

@@ -43,6 +43,15 @@ class JwtServiceTests {
         assertFalse(decoded.getClaims().containsKey("password"));
     }
 
+    @Test
+    void defaultLocalExpirationIsNotImmediate() {
+        String token = jwtService.createToken(user());
+
+        DecodedJWT decoded = JWT.decode(token);
+
+        assertTrue(decoded.getExpiresAt().toInstant().isAfter(Instant.now().plusSeconds(3_600)));
+    }
+
     private UserDocument user() {
         Instant now = Instant.now();
         UserDocument user = new UserDocument(
