@@ -9,6 +9,16 @@ The current implementation keeps the required stack:
 - Database: MongoDB
 - Local orchestration: Docker Compose
 
+## Demo URLs
+
+- API: https://lockedinforthecareercenter.onrender.com
+- FRONTEND: https://j-j-o-s-h.github.io/LockedInForTheCareerCenter/
+
+## Example API Calls (Direct)
+
+- https://lockedinforthecareercenter.onrender.com/api/events
+- https://lockedinforthecareercenter.onrender.com/api/api/auth/me
+
 ## Local Setup
 
 ### Prerequisites
