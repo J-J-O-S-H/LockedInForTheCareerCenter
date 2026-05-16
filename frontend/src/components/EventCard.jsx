@@ -21,7 +21,9 @@ function EventCard({
       <div className="event-card-heading">
         <div>
           <h3>{event.title}</h3>
-          <p>{event.description || 'Event details will be posted by the Career Center.'}</p>
+          <p className="event-card-description">
+            {event.description || 'Event details will be posted by the Career Center.'}
+          </p>
         </div>
         {event.priority && <span className="priority-pill">{event.priority}</span>}
       </div>
@@ -68,7 +70,7 @@ function EventCard({
       </div>
 
       {feedback?.message && (
-        <p className={feedback.type === 'error' ? 'error-text' : 'status-text'}>
+        <p className={`event-feedback ${feedback.type === 'error' ? 'error-text' : 'status-text'}`}>
           {feedback.message}
         </p>
       )}

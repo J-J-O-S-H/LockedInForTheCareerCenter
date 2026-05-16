@@ -11,6 +11,8 @@ const emptyEventForm = {
   priority: 'MEDIUM'
 };
 
+const validPriorities = new Set(['HIGH', 'MEDIUM', 'LOW']);
+
 function CreateEventPage({ user, status, error, onCreateEvent, onNavigate }) {
   const [form, setForm] = useState(emptyEventForm);
   const [localError, setLocalError] = useState('');
@@ -19,8 +21,25 @@ function CreateEventPage({ user, status, error, onCreateEvent, onNavigate }) {
     event.preventDefault();
     setLocalError('');
 
-    if (!form.eventDateTime) {
-      setLocalError('Event date and time are required.');
+    if (
+      !form.title.trim()
+      || !form.description.trim()
+      || !form.location.trim()
+      || !form.eventDateTime
+      || !String(form.maxVolunteers).trim()
+      || !form.priority
+    ) {
+      setLocalError('Please complete all required fields.');
+      return;
+    }
+
+    if (!validPriorities.has(form.priority)) {
+      setLocalError('Priority must be HIGH, MEDIUM, or LOW.');
+      return;
+    }
+
+    if (new Date(form.eventDateTime).getTime() <= Date.now()) {
+      setLocalError('Event date and time must be in the future.');
       return;
     }
 
@@ -51,7 +70,7 @@ function CreateEventPage({ user, status, error, onCreateEvent, onNavigate }) {
   }
 
   return (
-    <section className="auth-page">
+    <section className="auth-page create-event-page">
       <div className="panel form-panel">
         <div>
           <h1>Create event</h1>
@@ -120,12 +139,16 @@ function CreateEventPage({ user, status, error, onCreateEvent, onNavigate }) {
             </select>
           </FormField>
 
-          <button type="submit">Create event</button>
-          <button type="button" className="secondary-button" onClick={() => onNavigate('home')}>
-            Back to dashboard
-          </button>
-          <ErrorMessage message={localError || error} />
-          {status && <p className="status-text">{status}</p>}
+          <div className="form-actions">
+            <button type="submit">Create event</button>
+            <button type="button" className="secondary-button" onClick={() => onNavigate('home')}>
+              Back to dashboard
+            </button>
+          </div>
+          <div className="form-message-slot">
+            <ErrorMessage message={localError || error} />
+            {status && <p className="status-text">{status}</p>}
+          </div>
         </form>
       </div>
     </section>

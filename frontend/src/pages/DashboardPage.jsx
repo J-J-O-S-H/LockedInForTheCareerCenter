@@ -30,9 +30,9 @@ function DashboardPage({
   const previewEvents = events.slice(0, 4);
 
   return (
-    <section className="page-stack">
+    <section className="page-stack dashboard-page">
       <section className="dashboard-hero">
-        <div>
+        <div className="hero-content">
           <h1>Welcome, {user.firstName} {user.lastName}</h1>
           <p className="muted">{user.email}</p>
         </div>
@@ -55,12 +55,12 @@ function DashboardPage({
           <p>Registered events</p>
         </article>
         <article className="metric-card">
-          <span>{user.role}</span>
+          <span className="role-value">{user.role}</span>
           <p>Current role</p>
         </article>
       </section>
 
-      <section className="panel">
+      <section className="panel action-panel">
         <div className="panel-header">
           <div>
             <h2>Available actions</h2>

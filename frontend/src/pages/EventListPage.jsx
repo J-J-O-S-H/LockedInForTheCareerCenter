@@ -34,7 +34,7 @@ function EventListPage({
       </section>
 
       <ErrorMessage message={error} />
-      {!user && <p className="muted">Sign in as a volunteer or admin to register for events.</p>}
+      {!user && <p className="page-note">Sign in as a volunteer or admin to register for events.</p>}
 
       <div className="event-grid">
         {events.length === 0 && !loading && (

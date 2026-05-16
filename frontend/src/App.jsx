@@ -160,7 +160,7 @@ function App() {
     } catch (error) {
       if (error.status === 401) {
         if (authRef.current.token === token) {
-          clearAuth('Your session has expired. Please sign in again.');
+          clearAuth('Your session expired. Please sign in again.');
         }
       } else {
         setRegistrationsError(error.message);
@@ -177,7 +177,7 @@ function App() {
       await loadRegistrations(token);
     } catch {
       if (authRef.current.token === token) {
-        clearAuth('Your session has expired. Please sign in again.');
+        clearAuth('Your session expired. Please sign in again.');
       }
     }
   }

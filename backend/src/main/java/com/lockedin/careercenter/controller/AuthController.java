@@ -58,7 +58,7 @@ public class AuthController {
         } catch (IllegalArgumentException ex) {
             ErrorResponse error = new ErrorResponse(
                     "Unauthorized",
-                    ex.getMessage(),
+                    "Invalid email or password.",
                     Map.of(),
                     Instant.now());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
@@ -73,7 +73,7 @@ public class AuthController {
         } catch (IllegalArgumentException ex) {
             ErrorResponse error = new ErrorResponse(
                     "Unauthorized",
-                    ex.getMessage(),
+                    "Your session expired. Please sign in again.",
                     Map.of(),
                     Instant.now());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
