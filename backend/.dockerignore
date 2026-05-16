@@ -1,5 +1,7 @@
 target/
-.mvn/
 *.iml
 .idea/
 .vscode/
+.git/
+.gitignore
+README.md

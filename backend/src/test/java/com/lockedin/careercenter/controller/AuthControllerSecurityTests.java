@@ -17,6 +17,7 @@ import com.lockedin.careercenter.dto.UserRegistrationRequest;
 import com.lockedin.careercenter.dto.UserResponse;
 import com.lockedin.careercenter.model.UserDocument;
 import com.lockedin.careercenter.model.UserRole;
+import com.lockedin.careercenter.repository.EventRepository;
 import com.lockedin.careercenter.repository.UserRepository;
 import com.lockedin.careercenter.security.JwtAuthenticationFilter;
 import com.lockedin.careercenter.service.JwtService;
@@ -56,6 +57,9 @@ class AuthControllerSecurityTests {
 
     @MockBean
     private UserRepository userRepository;
+
+    @MockBean
+    private EventRepository eventRepository;
 
     @MockBean
     private PasswordEncoder passwordEncoder;

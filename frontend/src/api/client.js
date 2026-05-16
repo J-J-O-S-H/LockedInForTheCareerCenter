@@ -31,6 +31,36 @@ export const apiClient = {
   getEvents() {
     return request('/events');
   },
+  createEvent(event, token) {
+    return request('/events', {
+      method: 'POST',
+      authToken: token,
+      body: JSON.stringify(event)
+    });
+  },
+  registerForEvent(eventId, token) {
+    return request(`/events/${eventId}/registrations`, {
+      method: 'POST',
+      authToken: token
+    });
+  },
+  withdrawFromEvent(eventId, token) {
+    return request(`/events/${eventId}/registrations/me`, {
+      method: 'DELETE',
+      authToken: token
+    });
+  },
+  deleteEvent(eventId, token) {
+    return request(`/events/${eventId}`, {
+      method: 'DELETE',
+      authToken: token
+    });
+  },
+  getMyRegistrations(token) {
+    return request('/users/me/registrations', {
+      authToken: token
+    });
+  },
   registerUser(account) {
     return request('/auth/register', {
       method: 'POST',
