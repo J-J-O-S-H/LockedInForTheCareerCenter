@@ -58,7 +58,7 @@ public class EventController {
 
     @PostMapping("/{eventId}/registrations")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('VOLUNTEER')")
+    @PreAuthorize("hasAnyRole('VOLUNTEER', 'ADMIN')")
     public EventRegistrationResponse registerForEvent(
             @PathVariable String eventId,
             @AuthenticationPrincipal JwtPrincipal principal) {
@@ -66,7 +66,7 @@ public class EventController {
     }
 
     @DeleteMapping("/{eventId}/registrations/me")
-    @PreAuthorize("hasRole('VOLUNTEER')")
+    @PreAuthorize("hasAnyRole('VOLUNTEER', 'ADMIN')")
     public ActionResponse withdrawFromEvent(
             @PathVariable String eventId,
             @AuthenticationPrincipal JwtPrincipal principal) {

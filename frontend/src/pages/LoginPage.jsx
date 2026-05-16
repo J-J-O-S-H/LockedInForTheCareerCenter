@@ -19,7 +19,6 @@ function LoginPage({ status, onLogin, onNavigate }) {
     <section className="auth-page">
       <div className="panel form-panel">
         <div>
-          <p className="eyebrow">Account access</p>
           <h1>Sign in</h1>
           <p className="muted">Use your email and password to open the dashboard.</p>
         </div>
@@ -52,6 +51,9 @@ function LoginPage({ status, onLogin, onNavigate }) {
 
         <button type="button" className="link-button" onClick={() => onNavigate('register')}>
           Create a new account
+        </button>
+        <button type="button" className="link-button" onClick={() => onNavigate('home')}>
+          Back to landing
         </button>
       </div>
     </section>

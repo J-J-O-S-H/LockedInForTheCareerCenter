@@ -2,16 +2,22 @@ function EventCard({
   event,
   user,
   isRegistered = false,
+  showWithdraw = false,
   onSignUp,
   onWithdraw,
-  onDelete
+  onDelete,
+  feedback
 }) {
   const eventDateValue = event.eventDateTime || event.eventDate;
   const eventDate = eventDateValue ? new Date(eventDateValue) : null;
   const isFull = event.availableSpots <= 0;
+  const canRegister = user?.role === 'VOLUNTEER' || user?.role === 'ADMIN';
+  const cardClassName = isRegistered && !showWithdraw
+    ? 'event-card event-card-registered'
+    : 'event-card';
 
   return (
-    <article className="event-card">
+    <article className={cardClassName}>
       <div className="event-card-heading">
         <div>
           <h3>{event.title}</h3>
@@ -40,11 +46,13 @@ function EventCard({
       </dl>
 
       <div className="action-row">
-        {user?.role === 'VOLUNTEER' && (
-          isRegistered ? (
+        {canRegister && (
+          isRegistered && showWithdraw ? (
             <button type="button" className="secondary-button" onClick={() => onWithdraw(event)}>
               Withdraw
             </button>
+          ) : isRegistered ? (
+            <span className="registered-pill">Registered</span>
           ) : (
             <button type="button" disabled={isFull} onClick={() => onSignUp(event)}>
               {isFull ? 'Full' : 'Sign up'}
@@ -58,6 +66,12 @@ function EventCard({
           </button>
         )}
       </div>
+
+      {feedback?.message && (
+        <p className={feedback.type === 'error' ? 'error-text' : 'status-text'}>
+          {feedback.message}
+        </p>
+      )}
     </article>
   );
 }

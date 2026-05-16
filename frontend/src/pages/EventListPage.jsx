@@ -7,7 +7,8 @@ function EventListPage({
   registrations,
   loading,
   error,
-  status,
+  eventFeedback,
+  onNavigate,
   onRefresh,
   onSignUp,
   onWithdraw,
@@ -16,21 +17,24 @@ function EventListPage({
   const registeredEventIds = new Set(registrations.map((registration) => registration.eventId));
 
   return (
-    <section className="page-stack">
-      <section className="page-title-row">
+    <section className="page-stack events-page">
+      <section className="page-title-row events-page-header">
         <div>
-          <p className="eyebrow">Events</p>
           <h1>Upcoming events</h1>
           <p className="muted">View active events and available volunteer slots.</p>
         </div>
-        <button type="button" onClick={onRefresh} disabled={loading}>
-          {loading ? 'Loading' : 'Refresh'}
-        </button>
+        <div className="action-row">
+          <button type="button" className="secondary-button" onClick={() => onNavigate('home')}>
+            Back to dashboard
+          </button>
+          <button type="button" onClick={onRefresh} disabled={loading}>
+            {loading ? 'Loading' : 'Refresh'}
+          </button>
+        </div>
       </section>
 
       <ErrorMessage message={error} />
-      {status && <p className="status-text">{status}</p>}
-      {!user && <p className="muted">Sign in as a volunteer to register for events.</p>}
+      {!user && <p className="muted">Sign in as a volunteer or admin to register for events.</p>}
 
       <div className="event-grid">
         {events.length === 0 && !loading && (
@@ -49,6 +53,7 @@ function EventListPage({
             onSignUp={onSignUp}
             onWithdraw={onWithdraw}
             onDelete={onDelete}
+            feedback={eventFeedback?.eventId === event.id ? eventFeedback : null}
           />
         ))}
       </div>

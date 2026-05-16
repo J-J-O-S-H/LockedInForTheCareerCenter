@@ -8,7 +8,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Instant;
+import java.util.Date;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.jayway.jsonpath.JsonPath;
 import com.lockedin.careercenter.config.GlobalExceptionHandler;
 import com.lockedin.careercenter.config.SecurityConfig;
 import com.lockedin.careercenter.dto.AuthResponse;
@@ -32,6 +36,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 @WebMvcTest(controllers = AuthController.class)
 @Import({
@@ -106,6 +111,65 @@ class AuthControllerSecurityTests {
     }
 
     @Test
+    void tokenReturnedFromRegisterWorksImmediatelyWithCurrentUser() throws Exception {
+        UserResponse user = userResponse();
+        String token = jwtService.createToken(userDocument());
+        when(userService.register(any(UserRegistrationRequest.class)))
+                .thenReturn(new AuthResponse(user, "Registration successful.", token));
+        when(userService.getCurrentUser("user-1")).thenReturn(user);
+
+        MvcResult result = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "firstName": "Jane",
+                                  "lastName": "Hornet",
+                                  "role": "VOLUNTEER",
+                                  "email": "jane@example.com",
+                                  "password": "Password123!"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String returnedToken = JsonPath.read(result.getResponse().getContentAsString(), "$.token");
+
+        mockMvc.perform(get("/api/auth/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + returnedToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("user-1"))
+                .andExpect(jsonPath("$.email").value("jane@example.com"));
+    }
+
+    @Test
+    void tokenReturnedFromLoginWorksImmediatelyWithCurrentUser() throws Exception {
+        UserResponse user = userResponse();
+        String token = jwtService.createToken(userDocument());
+        when(userService.login(any(UserLoginRequest.class)))
+                .thenReturn(new AuthResponse(user, "Login successful.", token));
+        when(userService.getCurrentUser("user-1")).thenReturn(user);
+
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "jane@example.com",
+                                  "password": "Password123!"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String returnedToken = JsonPath.read(result.getResponse().getContentAsString(), "$.token");
+
+        mockMvc.perform(get("/api/auth/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + returnedToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("user-1"))
+                .andExpect(jsonPath("$.email").value("jane@example.com"));
+    }
+
+    @Test
     void currentUserSucceedsWithValidToken() throws Exception {
         UserDocument userDocument = userDocument();
         when(userService.getCurrentUser("user-1")).thenReturn(userResponse());
@@ -131,6 +195,23 @@ class AuthControllerSecurityTests {
     void currentUserFailsWithInvalidToken() throws Exception {
         mockMvc.perform(get("/api/auth/me")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer definitely-not-valid"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void currentUserFailsWithExpiredToken() throws Exception {
+        Instant now = Instant.now();
+        String expiredToken = JWT.create()
+                .withIssuer("locked-in-career-center")
+                .withSubject("user-1")
+                .withClaim("email", "jane@example.com")
+                .withClaim("role", "VOLUNTEER")
+                .withIssuedAt(Date.from(now.minusSeconds(120)))
+                .withExpiresAt(Date.from(now.minusSeconds(60)))
+                .sign(Algorithm.HMAC256("test-secret-with-enough-length-for-hmac"));
+
+        mockMvc.perform(get("/api/auth/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + expiredToken))
                 .andExpect(status().isUnauthorized());
     }
 

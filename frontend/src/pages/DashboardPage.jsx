@@ -8,11 +8,12 @@ function DashboardPage({
   registrations,
   eventsLoading,
   error,
-  status,
+  eventFeedback,
   onNavigate,
   onSignUp,
   onWithdraw,
-  onDelete
+  onDelete,
+  onLogout
 }) {
   if (!user) {
     return (
@@ -32,22 +33,24 @@ function DashboardPage({
     <section className="page-stack">
       <section className="dashboard-hero">
         <div>
-          <p className="eyebrow">Dashboard</p>
           <h1>Welcome, {user.firstName} {user.lastName}</h1>
-          <p className="muted">{user.email} / {user.role}</p>
+          <p className="muted">{user.email}</p>
         </div>
-        <div className="role-badge">{user.role}</div>
+        <div className="account-actions">
+          <button type="button" className="secondary-button" onClick={onLogout}>
+            Logout
+          </button>
+        </div>
       </section>
 
       <ErrorMessage message={error} />
-      {status && <p className="status-text">{status}</p>}
 
       <section className="summary-grid">
         <article className="metric-card">
           <span>{events.length}</span>
           <p>Upcoming events</p>
         </article>
-                <article className="metric-card">
+        <article className="metric-card">
           <span>{registrations.length}</span>
           <p>Registered events</p>
         </article>
@@ -60,20 +63,18 @@ function DashboardPage({
       <section className="panel">
         <div className="panel-header">
           <div>
-            <p className="eyebrow">Role actions</p>
             <h2>Available actions</h2>
           </div>
         </div>
         <div className="action-grid">
-          <RoleGate user={user} roles={['VOLUNTEER']}>
-            <button type="button" onClick={() => onNavigate('events')}>Find volunteer events</button>
-          </RoleGate>
-          <RoleGate user={user} roles={['ADMIN']}>
-            <button type="button" onClick={() => onNavigate('create-event')}>Create event</button>
-          </RoleGate>
-          <button type="button" className="secondary-button" onClick={() => onNavigate('events')}>
-            Browse events
+          <button type="button" onClick={() => onNavigate('events')}>
+            View events
           </button>
+          <RoleGate user={user} roles={['ADMIN']}>
+            <button type="button" className="secondary-button" onClick={() => onNavigate('create-event')}>
+              Create event
+            </button>
+          </RoleGate>
         </div>
       </section>
 
@@ -81,7 +82,6 @@ function DashboardPage({
         <section className="panel">
           <div className="panel-header">
             <div>
-              <p className="eyebrow">My registrations</p>
               <h2>Registered events</h2>
             </div>
           </div>
@@ -97,9 +97,11 @@ function DashboardPage({
                 event={event}
                 user={user}
                 isRegistered
+                showWithdraw
                 onSignUp={onSignUp}
                 onWithdraw={onWithdraw}
                 onDelete={onDelete}
+                feedback={eventFeedback?.eventId === event.id ? eventFeedback : null}
               />
             ))}
           </div>
@@ -108,7 +110,6 @@ function DashboardPage({
         <section className="panel">
           <div className="panel-header">
             <div>
-              <p className="eyebrow">Upcoming</p>
               <h2>Upcoming events</h2>
             </div>
             <button type="button" className="secondary-button" onClick={() => onNavigate('events')}>
@@ -127,6 +128,7 @@ function DashboardPage({
                 onSignUp={onSignUp}
                 onWithdraw={onWithdraw}
                 onDelete={onDelete}
+                feedback={eventFeedback?.eventId === event.id ? eventFeedback : null}
               />
             ))}
           </div>

@@ -22,7 +22,6 @@ function RegisterPage({ status, onRegister, onNavigate }) {
     <section className="auth-page">
       <div className="panel form-panel">
         <div>
-          <p className="eyebrow">New account</p>
           <h1>Create account</h1>
           <p className="muted">Choose the role that matches your Career Center access.</p>
         </div>
@@ -88,6 +87,9 @@ function RegisterPage({ status, onRegister, onNavigate }) {
 
         <button type="button" className="link-button" onClick={() => onNavigate('login')}>
           Already have an account
+        </button>
+        <button type="button" className="link-button" onClick={() => onNavigate('home')}>
+          Back to landing
         </button>
       </div>
     </section>

@@ -75,8 +75,7 @@ button:disabled {
 }
 
 .link-button,
-.brand-button,
-.nav-link {
+.text-button {
   background: transparent;
   color: var(--color-text-secondary);
   min-height: auto;
@@ -84,54 +83,22 @@ button:disabled {
 }
 
 .link-button:hover:not(:disabled),
-.brand-button:hover:not(:disabled),
-.nav-link:hover:not(:disabled) {
+.text-button:hover:not(:disabled) {
   background: #edf2f7;
   color: var(--color-text-primary);
 }
 
-.app-header {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.96);
-  border-bottom: 1px solid var(--color-border);
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: minmax(220px, 1fr) auto minmax(180px, 1fr);
-  padding: 0.9rem 1.25rem;
-  position: sticky;
-  top: 0;
-  z-index: 20;
-}
-
-.brand-button {
-  color: var(--color-text-primary);
-  font-size: 1rem;
-  font-weight: 900;
-  justify-self: start;
-}
-
-.nav-links,
-.auth-nav,
 .action-row,
-.action-grid {
+.action-grid,
+.account-actions {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 0.65rem;
 }
 
-.nav-links {
-  justify-content: center;
-}
-
-.auth-nav {
-  color: var(--color-text-muted);
-  justify-content: end;
-}
-
-.nav-link.active {
-  background: #d4ede9;
-  color: #0f766e;
+.account-actions {
+  justify-content: flex-end;
 }
 
 .app-shell {
@@ -220,6 +187,13 @@ button:disabled {
 .dashboard-hero,
 .page-title-row {
   padding: 1.25rem;
+}
+
+.events-page-header {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 .panel h2,
@@ -315,7 +289,6 @@ textarea {
   margin: 0.25rem 0 0;
 }
 
-.role-badge,
 .priority-pill {
   align-self: start;
   background: #d4ede9;
@@ -324,6 +297,15 @@ textarea {
   font-size: 0.78rem;
   font-weight: 900;
   padding: 0.35rem 0.7rem;
+}
+
+.registered-pill {
+  background: #e8f3f1;
+  border-radius: 999px;
+  color: #0f766e;
+  font-size: 0.86rem;
+  font-weight: 900;
+  padding: 0.45rem 0.75rem;
 }
 
 .event-grid,
@@ -340,6 +322,11 @@ textarea {
   display: grid;
   gap: 1rem;
   padding: 1rem;
+}
+
+.event-card-registered {
+  background: var(--color-surface-muted);
+  border-style: dashed;
 }
 
 .event-card-heading {
@@ -386,15 +373,6 @@ textarea {
 }
 
 @media (max-width: 900px) {
-  .app-header {
-    grid-template-columns: 1fr;
-  }
-
-  .nav-links,
-  .auth-nav {
-    justify-content: flex-start;
-  }
-
   .content-grid,
   .event-grid,
   .summary-grid {
@@ -413,6 +391,10 @@ textarea {
   .dashboard-hero,
   .page-title-row {
     padding: 1rem;
+  }
+
+  .events-page-header {
+    padding: 0;
   }
 
   .status-panel,

@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiClient } from './api/client';
-import Header from './components/Header';
 import CreateEventPage from './pages/CreateEventPage';
 import DashboardPage from './pages/DashboardPage';
 import EventListPage from './pages/EventListPage';
@@ -17,57 +16,115 @@ function getSavedAuth() {
   }
 }
 
+const viewToPath = {
+  home: '/',
+  login: '/login',
+  register: '/register',
+  events: '/events',
+  'create-event': '/events/create'
+};
+
+function getViewFromPath(pathname) {
+  if (pathname === '/dashboard' || pathname === '/') {
+    return 'home';
+  }
+
+  if (pathname === '/login') {
+    return 'login';
+  }
+
+  if (pathname === '/register') {
+    return 'register';
+  }
+
+  if (pathname === '/events/create') {
+    return 'create-event';
+  }
+
+  if (pathname === '/events') {
+    return 'events';
+  }
+
+  return 'home';
+}
+
 function App() {
-  const [view, setView] = useState('landing');
-  const [health, setHealth] = useState(null);
-  const [healthError, setHealthError] = useState('');
-  const [healthLoading, setHealthLoading] = useState(true);
+  const [view, setView] = useState(() => getViewFromPath(window.location.pathname));
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsError, setEventsError] = useState('');
   const [registrations, setRegistrations] = useState([]);
   const [registrationsError, setRegistrationsError] = useState('');
   const [authStatus, setAuthStatus] = useState(null);
-  const [actionStatus, setActionStatus] = useState('');
-  const [actionError, setActionError] = useState('');
+  const [eventFeedback, setEventFeedback] = useState(null);
   const [createStatus, setCreateStatus] = useState('');
   const [createError, setCreateError] = useState('');
   const [auth, setAuth] = useState(getSavedAuth);
+  const authRef = useRef(auth);
+  const eventFeedbackTimerRef = useRef(null);
 
-  const registeredEventIds = useMemo(
-    () => new Set(registrations.map((registration) => registration.eventId)),
-    [registrations]
-  );
+  function updateView(nextView, { replace = false } = {}) {
+    const nextPath = viewToPath[nextView] || '/';
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
-  function navigate(nextView) {
-    if ((nextView === 'dashboard' || nextView === 'create-event') && !auth.user) {
-      setView('login');
-      setAuthStatus({ type: 'error', message: 'Please sign in to continue.' });
-      return;
-    }
-
-    if (nextView === 'create-event' && auth.user?.role !== 'ADMIN') {
-      setView('dashboard');
-      setActionError('Only admin accounts can create events.');
-      return;
+    if (currentPath !== nextPath) {
+      if (replace) {
+        window.history.replaceState(null, '', nextPath);
+      } else {
+        window.history.pushState(null, '', nextPath);
+      }
     }
 
     setView(nextView);
   }
 
-  async function loadHealth() {
-    setHealthLoading(true);
-    setHealthError('');
-
-    try {
-      const data = await apiClient.getHealth();
-      setHealth(data);
-    } catch (error) {
-      setHealth(null);
-      setHealthError(error.message);
-    } finally {
-      setHealthLoading(false);
+  function clearEventFeedback() {
+    if (eventFeedbackTimerRef.current) {
+      window.clearTimeout(eventFeedbackTimerRef.current);
+      eventFeedbackTimerRef.current = null;
     }
+    setEventFeedback(null);
+  }
+
+  function showEventFeedback(eventId, type, message, { autoClear = false } = {}) {
+    if (eventFeedbackTimerRef.current) {
+      window.clearTimeout(eventFeedbackTimerRef.current);
+      eventFeedbackTimerRef.current = null;
+    }
+
+    setEventFeedback({ eventId, type, message });
+
+    if (autoClear) {
+      eventFeedbackTimerRef.current = window.setTimeout(() => {
+        setEventFeedback((current) => (
+          current?.eventId === eventId && current?.message === message ? null : current
+        ));
+        eventFeedbackTimerRef.current = null;
+      }, 4500);
+    }
+  }
+
+  function setAuthState(nextAuth) {
+    authRef.current = nextAuth;
+    setAuth(nextAuth);
+  }
+
+  function navigate(nextView, options = {}) {
+    const normalizedView = nextView === 'dashboard' || nextView === 'landing' ? 'home' : nextView;
+    clearEventFeedback();
+
+    if (normalizedView === 'create-event' && !auth.user) {
+      updateView('login', options);
+      setAuthStatus({ type: 'error', message: 'Please sign in to continue.' });
+      return;
+    }
+
+    if (normalizedView === 'create-event' && auth.user?.role !== 'ADMIN') {
+      updateView('home', options);
+      return;
+    }
+
+    updateView(normalizedView, options);
   }
 
   async function loadEvents() {
@@ -84,6 +141,11 @@ function App() {
     }
   }
 
+  async function refreshEvents() {
+    clearEventFeedback();
+    await loadEvents();
+  }
+
   async function loadRegistrations(token = auth.token) {
     if (!token) {
       setRegistrations([]);
@@ -97,7 +159,9 @@ function App() {
       setRegistrationsError('');
     } catch (error) {
       if (error.status === 401) {
-        clearAuth('Your session has expired. Please sign in again.');
+        if (authRef.current.token === token) {
+          clearAuth('Your session has expired. Please sign in again.');
+        }
       } else {
         setRegistrationsError(error.message);
       }
@@ -107,17 +171,21 @@ function App() {
   async function refreshCurrentUser(token) {
     try {
       const user = await apiClient.getCurrentUser(token);
-      setAuth({ user, token });
+      if (authRef.current.token === token) {
+        setAuthState({ user, token });
+      }
       await loadRegistrations(token);
     } catch {
-      clearAuth('Your session has expired. Please sign in again.');
+      if (authRef.current.token === token) {
+        clearAuth('Your session has expired. Please sign in again.');
+      }
     }
   }
 
   function clearAuth(message = '') {
-    setAuth({ user: null, token: null });
+    setAuthState({ user: null, token: null });
     setRegistrations([]);
-    setView('login');
+    updateView('home');
     if (message) {
       setAuthStatus({ type: 'error', message });
     }
@@ -128,12 +196,12 @@ function App() {
 
     try {
       const response = await apiClient.login(credentials);
-      setAuth({ user: response.user, token: response.token });
+      setAuthState({ user: response.user, token: response.token });
       setAuthStatus({ type: 'success', message: response.message });
-      setView('dashboard');
+      updateView('home');
       await Promise.all([loadEvents(), loadRegistrations(response.token)]);
     } catch (error) {
-      setAuth({ user: null, token: null });
+      setAuthState({ user: null, token: null });
       setAuthStatus({ type: 'error', message: error.message });
     }
   }
@@ -143,9 +211,9 @@ function App() {
 
     try {
       const response = await apiClient.registerUser(account);
-      setAuth({ user: response.user, token: response.token });
+      setAuthState({ user: response.user, token: response.token });
       setAuthStatus({ type: 'success', message: response.message });
-      setView('dashboard');
+      updateView('home');
       await Promise.all([loadEvents(), loadRegistrations(response.token)]);
     } catch (error) {
       setAuthStatus({ type: 'error', message: error.message });
@@ -158,71 +226,65 @@ function App() {
 
   async function handleSignUp(event) {
     if (!auth.token) {
-      setActionError('Please sign in before registering for an event.');
-      setView('login');
+      updateView('login');
+      setAuthStatus({ type: 'error', message: 'Please sign in before registering for an event.' });
       return;
     }
 
-    if (auth.user?.role !== 'VOLUNTEER') {
-      setActionError('Only volunteer accounts can register for events.');
+    if (auth.user?.role !== 'VOLUNTEER' && auth.user?.role !== 'ADMIN') {
+      showEventFeedback(event.id, 'error', 'Only volunteer and admin accounts can register for events.');
       return;
     }
 
-    setActionError('');
-    setActionStatus(`Registering for ${event.title}...`);
+    showEventFeedback(event.id, 'info', `Registering for ${event.title}...`);
 
     try {
       const registration = await apiClient.registerForEvent(event.id, auth.token);
-      setActionStatus(`Registered for ${registration.event.title}.`);
       await Promise.all([loadEvents(), loadRegistrations(auth.token)]);
+      showEventFeedback(event.id, 'success', `Registered for ${registration.event.title}.`, { autoClear: true });
     } catch (error) {
-      setActionStatus('');
-      setActionError(error.message);
+      showEventFeedback(event.id, 'error', error.message);
     }
   }
 
   async function handleWithdraw(event) {
     if (!auth.token) {
-      setActionError('Please sign in before withdrawing from an event.');
-      setView('login');
+      updateView('login');
+      setAuthStatus({ type: 'error', message: 'Please sign in before withdrawing from an event.' });
       return;
     }
 
-    setActionError('');
-    setActionStatus(`Withdrawing from ${event.title}...`);
+    showEventFeedback(event.id, 'info', `Withdrawing from ${event.title}...`);
 
     try {
       const response = await apiClient.withdrawFromEvent(event.id, auth.token);
-      setActionStatus(response.message);
       await Promise.all([loadEvents(), loadRegistrations(auth.token)]);
+      showEventFeedback(event.id, 'success', response.message, { autoClear: true });
     } catch (error) {
-      setActionStatus('');
-      setActionError(error.message);
+      showEventFeedback(event.id, 'error', error.message);
     }
   }
 
   async function handleDeleteEvent(event) {
     if (!auth.token) {
-      setActionError('Please sign in before deleting an event.');
-      setView('login');
+      updateView('login');
+      setAuthStatus({ type: 'error', message: 'Please sign in before deleting an event.' });
       return;
     }
 
     if (auth.user?.role !== 'ADMIN') {
-      setActionError('Only admin accounts can delete events.');
+      showEventFeedback(event.id, 'error', 'Only admin accounts can delete events.');
       return;
     }
 
-    setActionError('');
-    setActionStatus(`Deleting ${event.title}...`);
+    showEventFeedback(event.id, 'info', `Deleting ${event.title}...`);
 
     try {
       const response = await apiClient.deleteEvent(event.id, auth.token);
-      setActionStatus(response.message);
       await Promise.all([loadEvents(), loadRegistrations(auth.token)]);
+      showEventFeedback(event.id, 'success', response.message, { autoClear: true });
     } catch (error) {
-      setActionStatus('');
-      setActionError(error.message);
+      showEventFeedback(event.id, 'error', error.message);
     }
   }
 
@@ -248,7 +310,33 @@ function App() {
   }
 
   useEffect(() => {
-    loadHealth();
+    authRef.current = auth;
+  }, [auth]);
+
+  useEffect(() => () => {
+    if (eventFeedbackTimerRef.current) {
+      window.clearTimeout(eventFeedbackTimerRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
+    const normalizedView = getViewFromPath(window.location.pathname);
+    if (window.location.pathname === '/dashboard') {
+      navigate('home', { replace: true });
+    } else {
+      setView(normalizedView);
+    }
+
+    function handlePopState() {
+      clearEventFeedback();
+      setView(getViewFromPath(window.location.pathname));
+    }
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
     loadEvents();
 
     if (auth.token) {
@@ -257,12 +345,8 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!auth.user && (view === 'dashboard' || view === 'create-event')) {
-      setView('login');
-    }
-
     if (auth.user?.role !== 'ADMIN' && view === 'create-event') {
-      setView('dashboard');
+      updateView('home', { replace: true });
     }
   }, [auth.user, view]);
 
@@ -279,12 +363,13 @@ function App() {
     events,
     registrations,
     eventsLoading,
-    error: eventsError || registrationsError || actionError,
-    status: actionStatus,
+    error: eventsError || registrationsError,
+    eventFeedback,
     onNavigate: navigate,
     onSignUp: handleSignUp,
     onWithdraw: handleWithdraw,
-    onDelete: handleDeleteEvent
+    onDelete: handleDeleteEvent,
+    onLogout: handleLogout
   };
 
   function renderPage() {
@@ -296,16 +381,12 @@ function App() {
       return <RegisterPage status={authStatus} onRegister={handleRegister} onNavigate={navigate} />;
     }
 
-    if (view === 'dashboard') {
-      return <DashboardPage {...sharedPageProps} />;
-    }
-
     if (view === 'events') {
       return (
         <EventListPage
           {...sharedPageProps}
           loading={eventsLoading}
-          onRefresh={loadEvents}
+          onRefresh={refreshEvents}
         />
       );
     }
@@ -322,29 +403,21 @@ function App() {
       );
     }
 
+    if (view === 'home' && auth.user) {
+      return <DashboardPage {...sharedPageProps} />;
+    }
+
     return (
       <LandingPage
-        health={health}
-        healthLoading={healthLoading}
-        healthError={healthError}
-        onCheckBackend={loadHealth}
         onNavigate={navigate}
       />
     );
   }
 
   return (
-    <>
-      <Header
-        user={auth.user}
-        currentView={view}
-        onNavigate={navigate}
-        onLogout={handleLogout}
-      />
-      <main className="app-shell">
-        {renderPage()}
-      </main>
-    </>
+    <main className="app-shell">
+      {renderPage()}
+    </main>
   );
 }
 

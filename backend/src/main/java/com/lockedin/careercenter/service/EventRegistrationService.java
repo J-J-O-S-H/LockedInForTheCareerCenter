@@ -96,7 +96,10 @@ public class EventRegistrationService {
                 .collect(Collectors.toMap(EventDocument::getId, Function.identity()));
 
         return registrations.stream()
-                .filter(registration -> eventsById.containsKey(registration.getEventId()))
+                .filter(registration -> {
+                    EventDocument event = eventsById.get(registration.getEventId());
+                    return event != null && eventStatus(event) != EventStatus.DELETED;
+                })
                 .map(registration -> toResponse(registration, eventsById.get(registration.getEventId())))
                 .toList();
     }

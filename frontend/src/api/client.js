@@ -17,13 +17,36 @@ async function request(path, options = {}) {
   const body = hasJsonBody ? await response.json() : null;
 
   if (!response.ok) {
-    const message = body?.message || body?.error || `Request failed with status ${response.status}`;
+    const fieldErrors = body?.fieldErrors || {};
+    const message = friendlyErrorMessage(body, fieldErrors, response.status);
     const error = new Error(message);
     error.status = response.status;
+    error.fieldErrors = fieldErrors;
     throw error;
   }
 
   return body;
+}
+
+function friendlyErrorMessage(body, fieldErrors, status) {
+  if (body?.message && body.message !== 'Please check the request body.') {
+    return body.message;
+  }
+
+  if (fieldErrors.email) {
+    return fieldErrors.email;
+  }
+
+  if (fieldErrors.password) {
+    return fieldErrors.password;
+  }
+
+  const firstFieldMessage = Object.values(fieldErrors)[0];
+  if (firstFieldMessage) {
+    return firstFieldMessage;
+  }
+
+  return body?.error || `Request failed with status ${status}`;
 }
 
 export const apiClient = {

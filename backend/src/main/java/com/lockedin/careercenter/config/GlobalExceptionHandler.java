@@ -27,7 +27,7 @@ public class GlobalExceptionHandler {
 
         return new ErrorResponse(
                 "Validation failed",
-                "Please check the request body.",
+                validationMessage(errors),
                 errors,
                 Instant.now());
     }
@@ -50,6 +50,26 @@ public class GlobalExceptionHandler {
                         exception.getStatus().getReasonPhrase(),
                         exception.getMessage(),
                         Map.of(),
-                        Instant.now()));
+                Instant.now()));
+    }
+
+    private String validationMessage(Map<String, String> errors) {
+        if (errors.isEmpty()) {
+            return "Please complete all required fields.";
+        }
+
+        if (errors.containsKey("email")) {
+            return "Please enter a valid email address.";
+        }
+
+        if (errors.containsKey("password")) {
+            return "Password must include at least one special character.";
+        }
+
+        if (errors.values().stream().anyMatch(message -> message != null && message.contains("required"))) {
+            return "Please complete all required fields.";
+        }
+
+        return "Please correct the highlighted fields.";
     }
 }

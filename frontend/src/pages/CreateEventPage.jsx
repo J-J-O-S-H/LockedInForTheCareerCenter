@@ -45,7 +45,7 @@ function CreateEventPage({ user, status, error, onCreateEvent, onNavigate }) {
       <section className="panel empty-state">
         <h1>Admin access required</h1>
         <p className="muted">Event creation is limited to admin users.</p>
-        <button type="button" onClick={() => onNavigate('dashboard')}>Back to dashboard</button>
+        <button type="button" onClick={() => onNavigate('home')}>Back to dashboard</button>
       </section>
     );
   }
@@ -54,7 +54,6 @@ function CreateEventPage({ user, status, error, onCreateEvent, onNavigate }) {
     <section className="auth-page">
       <div className="panel form-panel">
         <div>
-          <p className="eyebrow">Admin</p>
           <h1>Create event</h1>
           <p className="muted">New events appear in the public upcoming events list.</p>
         </div>
@@ -122,6 +121,9 @@ function CreateEventPage({ user, status, error, onCreateEvent, onNavigate }) {
           </FormField>
 
           <button type="submit">Create event</button>
+          <button type="button" className="secondary-button" onClick={() => onNavigate('home')}>
+            Back to dashboard
+          </button>
           <ErrorMessage message={localError || error} />
           {status && <p className="status-text">{status}</p>}
         </form>
