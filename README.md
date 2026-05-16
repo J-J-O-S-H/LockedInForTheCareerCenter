@@ -1,60 +1,98 @@
-# 📌 Locked In Career Center
+# Locked In For The Career Center
 
-**Locked In Career Center** is a web-based platform designed to streamline volunteer coordination and event management for the Sacramento State Career Center. It replaces manual processes with a centralized system for managing events, volunteers, and employer information.
+Locked In For The Career Center is a full-stack Career Center event and volunteer coordination app. It supports account registration and login, role-based event actions, event viewing, volunteer/admin event registration, withdrawal, and admin event creation/deletion.
 
----
+The current implementation keeps the required stack:
 
-## Overview
+- Frontend: Vite, React, JavaScript
+- Backend: Java, Spring Boot
+- Database: MongoDB
+- Local orchestration: Docker Compose
 
-This application enables students, volunteers, employers, and administrators to interact through a unified platform. Users can create accounts, browse and register for events, and access relevant career center information, while administrators can manage and prioritize events efficiently.
+## Local Setup
 
-Link: http://localhost:5173/
----
+### Prerequisites
 
-## Key Features
+- Docker Desktop or another Docker Compose compatible runtime
+- Optional for non-Docker development:
+  - Java 17
+  - Maven
+  - Node.js 20+
+  - MongoDB
 
--  **User Authentication**
-  - Account registration and login for multiple roles (student, volunteer, admin, employer)
-  - Returning user login is implemented with seeded credentials for first-time setup:
-    - Email: `returninguser@example.com`
-    - Password: `Password123!`
+### Run With Docker Compose
 
--  **Event Management**
-  - Create, edit, and prioritize events (admin)
-  - View upcoming events with details (all users)
+From the repository root:
 
-- **Volunteer Registration**
-  - Sign up for events
-  - Track registered events
+```bash
+docker compose up --build
+```
 
--  **Dashboard**
-  - Centralized view of events and user activity
+Then open:
 
--  **Employer Information Pages**
-  - Employers can showcase company details for students
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8080/api`
+- Health endpoint: `http://localhost:8080/api/health`
+- MongoDB: `localhost:27017`
 
--  **Contact Information**
-  - Access career center communication details
+To stop:
 
----
+```bash
+docker compose down
+```
 
-##  Tech Stack
+To reset local MongoDB seed data:
 
-### Frontend
-- React.js
-- JavaScript
-- Vite (development/build tool)
+```bash
+docker compose down -v
+docker compose up --build
+```
 
-### Backend
-- Java
-- Spring Boot
+## Seeded Demo Data
 
-### Database
-- MongoDB
+Seed data is inserted only when the relevant MongoDB collection is empty.
 
-### Tools
-- Git & GitHub (version control, CI/CD)
-- Figma (UI/UX design)
+Demo users:
 
----
+| Role | Email | Password |
+| --- | --- | --- |
+| `VOLUNTEER` | `returninguser@example.com` | `Password123!` |
+| `ADMIN` | `admin@example.com` | `Admin123!` |
 
+Demo events:
+
+- Spring Career Fair
+- Resume Review Workshop
+- Employer Networking Night
+
+## API Summary
+
+Authentication:
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+
+Health:
+
+- `GET /api/health`
+
+Events:
+
+- `GET /api/events`
+- `POST /api/events` requires `ADMIN`
+- `DELETE /api/events/{eventId}` requires `ADMIN`
+
+Registrations:
+
+- `POST /api/events/{eventId}/registrations` requires `VOLUNTEER` or `ADMIN`
+- `DELETE /api/events/{eventId}/registrations/me` requires `VOLUNTEER` or `ADMIN`
+- `GET /api/users/me/registrations` requires authentication
+
+## Testing And Validation
+
+Backend tests:
+
+```bash
+docker run --rm -v ${PWD}:/app -w /app/backend maven:3.9.6-eclipse-temurin-17 mvn test
+```

@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.lockedin.careercenter.config.GlobalExceptionHandler;
+import com.lockedin.careercenter.dto.UserLoginRequest;
 import com.lockedin.careercenter.dto.UserRegistrationRequest;
 import com.lockedin.careercenter.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +55,27 @@ class AuthControllerValidationTests {
     }
 
     @Test
+    void rejectsMissingRegistrationFieldsWithFriendlyMessage() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "firstName": "",
+                                  "lastName": "",
+                                  "email": "",
+                                  "password": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Please complete all required fields."))
+                .andExpect(jsonPath("$.fieldErrors.firstName").exists())
+                .andExpect(jsonPath("$.fieldErrors.lastName").exists())
+                .andExpect(jsonPath("$.fieldErrors.role").exists())
+                .andExpect(jsonPath("$.fieldErrors.email").exists())
+                .andExpect(jsonPath("$.fieldErrors.password").exists());
+    }
+
+    @Test
     void rejectsRegistrationPasswordWithoutSpecialCharacter() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -90,5 +112,37 @@ class AuthControllerValidationTests {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message")
                         .value("An account with this email already exists. Try logging in instead."));
+    }
+
+    @Test
+    void invalidLoginCredentialsReturnFriendlyMessage() throws Exception {
+        when(userService.login(any(UserLoginRequest.class)))
+                .thenThrow(new IllegalArgumentException("Invalid email or password."));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "jane@example.com",
+                                  "password": "wrong-password"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Invalid email or password."));
+    }
+
+    @Test
+    void invalidLoginEmailReturnsFriendlyMessage() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "not-an-email",
+                                  "password": "Password123!"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Please enter a valid email address."))
+                .andExpect(jsonPath("$.fieldErrors.email").exists());
     }
 }

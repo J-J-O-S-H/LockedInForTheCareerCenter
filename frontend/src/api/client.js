@@ -29,8 +29,12 @@ async function request(path, options = {}) {
 }
 
 function friendlyErrorMessage(body, fieldErrors, status) {
-  if (body?.message && body.message !== 'Please check the request body.') {
+  if (body?.message && !body.message.toLowerCase().includes('request body')) {
     return body.message;
+  }
+
+  if (Object.values(fieldErrors).some((message) => message?.includes('required'))) {
+    return 'Please complete all required fields.';
   }
 
   if (fieldErrors.email) {
@@ -44,6 +48,10 @@ function friendlyErrorMessage(body, fieldErrors, status) {
   const firstFieldMessage = Object.values(fieldErrors)[0];
   if (firstFieldMessage) {
     return firstFieldMessage;
+  }
+
+  if (status === 401) {
+    return 'Your session expired. Please sign in again.';
   }
 
   return body?.error || `Request failed with status ${status}`;

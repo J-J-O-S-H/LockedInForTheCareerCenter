@@ -34,10 +34,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleUnreadableBody() {
+    public ErrorResponse handleUnreadableBody(HttpMessageNotReadableException exception) {
+        String mostSpecificMessage = exception.getMostSpecificCause().getMessage();
+        if (mostSpecificMessage != null && mostSpecificMessage.contains("EventPriority")) {
+            return new ErrorResponse(
+                    "Invalid request body",
+                    "Priority must be HIGH, MEDIUM, or LOW.",
+                    Map.of("priority", "Priority must be HIGH, MEDIUM, or LOW."),
+                    Instant.now());
+        }
+
         return new ErrorResponse(
                 "Invalid request body",
-                "Send valid JSON with the expected fields.",
+                "Please use valid JSON and valid values for each field.",
                 Map.of(),
                 Instant.now());
     }
@@ -58,16 +67,16 @@ public class GlobalExceptionHandler {
             return "Please complete all required fields.";
         }
 
+        if (errors.values().stream().anyMatch(message -> message != null && message.contains("required"))) {
+            return "Please complete all required fields.";
+        }
+
         if (errors.containsKey("email")) {
             return "Please enter a valid email address.";
         }
 
         if (errors.containsKey("password")) {
             return "Password must include at least one special character.";
-        }
-
-        if (errors.values().stream().anyMatch(message -> message != null && message.contains("required"))) {
-            return "Please complete all required fields.";
         }
 
         return "Please correct the highlighted fields.";

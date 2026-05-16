@@ -9,9 +9,22 @@ const emptyLoginForm = {
 
 function LoginPage({ status, onLogin, onNavigate }) {
   const [form, setForm] = useState(emptyLoginForm);
+  const [localError, setLocalError] = useState('');
 
   async function handleSubmit(event) {
     event.preventDefault();
+    setLocalError('');
+
+    if (!form.email.trim() || !form.password) {
+      setLocalError('Please complete all required fields.');
+      return;
+    }
+
+    if (!form.email.includes('@')) {
+      setLocalError('Please enter a valid email address.');
+      return;
+    }
+
     await onLogin(form);
   }
 
@@ -45,16 +58,20 @@ function LoginPage({ status, onLogin, onNavigate }) {
           />
 
           <button type="submit">Sign in</button>
-          <ErrorMessage message={status?.type === 'error' ? status.message : ''} />
-          {status?.type === 'success' && <p className="muted">{status.message}</p>}
+          <div className="form-message-slot">
+            <ErrorMessage message={localError || (status?.type === 'error' ? status.message : '')} />
+            {status?.type === 'success' && <p className="status-text">{status.message}</p>}
+          </div>
         </form>
 
-        <button type="button" className="link-button" onClick={() => onNavigate('register')}>
-          Create a new account
-        </button>
-        <button type="button" className="link-button" onClick={() => onNavigate('home')}>
-          Back to landing
-        </button>
+        <div className="form-links">
+          <button type="button" className="link-button" onClick={() => onNavigate('register')}>
+            Create a new account
+          </button>
+          <button type="button" className="link-button" onClick={() => onNavigate('home')}>
+            Back to landing
+          </button>
+        </div>
       </div>
     </section>
   );

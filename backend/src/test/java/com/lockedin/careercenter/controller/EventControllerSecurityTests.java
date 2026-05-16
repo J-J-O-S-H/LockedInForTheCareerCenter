@@ -148,13 +148,37 @@ class EventControllerSecurityTests {
                                   "maxVolunteers": 0,
                                   "priority": null
                                 }
-                                """))
+                """))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Please complete all required fields."))
                 .andExpect(jsonPath("$.fieldErrors.title").exists())
                 .andExpect(jsonPath("$.fieldErrors.description").exists())
                 .andExpect(jsonPath("$.fieldErrors.location").exists())
                 .andExpect(jsonPath("$.fieldErrors.eventDateTime").exists())
                 .andExpect(jsonPath("$.fieldErrors.maxVolunteers").exists())
+                .andExpect(jsonPath("$.fieldErrors.priority").exists());
+    }
+
+    @Test
+    void createEventValidationRejectsInvalidPriorityWithSafeMessage() throws Exception {
+        JwtPrincipal principal = new JwtPrincipal("admin-1", "admin@example.com", UserRole.ADMIN);
+        when(jwtService.verify("admin-token")).thenReturn(principal);
+
+        mockMvc.perform(post("/api/events")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "Career Fair",
+                                  "description": "Meet employers.",
+                                  "location": "Union Ballroom",
+                                  "eventDateTime": "%s",
+                                  "maxVolunteers": 10,
+                                  "priority": "URGENT"
+                                }
+                                """.formatted(Instant.now().plusSeconds(3600))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Priority must be HIGH, MEDIUM, or LOW."))
                 .andExpect(jsonPath("$.fieldErrors.priority").exists());
     }
 

@@ -12,9 +12,33 @@ const emptyRegistrationForm = {
 
 function RegisterPage({ status, onRegister, onNavigate }) {
   const [form, setForm] = useState(emptyRegistrationForm);
+  const [localError, setLocalError] = useState('');
 
   async function handleSubmit(event) {
     event.preventDefault();
+    setLocalError('');
+
+    if (
+      !form.firstName.trim()
+      || !form.lastName.trim()
+      || !form.role
+      || !form.email.trim()
+      || !form.password
+    ) {
+      setLocalError('Please complete all required fields.');
+      return;
+    }
+
+    if (!form.email.includes('@')) {
+      setLocalError('Please enter a valid email address.');
+      return;
+    }
+
+    if (!/[^A-Za-z0-9]/.test(form.password)) {
+      setLocalError('Password must include at least one special character.');
+      return;
+    }
+
     await onRegister(form);
   }
 
@@ -81,16 +105,20 @@ function RegisterPage({ status, onRegister, onNavigate }) {
           />
 
           <button type="submit">Create account</button>
-          <ErrorMessage message={status?.type === 'error' ? status.message : ''} />
-          {status?.type === 'success' && <p className="muted">{status.message}</p>}
+          <div className="form-message-slot">
+            <ErrorMessage message={localError || (status?.type === 'error' ? status.message : '')} />
+            {status?.type === 'success' && <p className="status-text">{status.message}</p>}
+          </div>
         </form>
 
-        <button type="button" className="link-button" onClick={() => onNavigate('login')}>
-          Already have an account
-        </button>
-        <button type="button" className="link-button" onClick={() => onNavigate('home')}>
-          Back to landing
-        </button>
+        <div className="form-links">
+          <button type="button" className="link-button" onClick={() => onNavigate('login')}>
+            Already have an account
+          </button>
+          <button type="button" className="link-button" onClick={() => onNavigate('home')}>
+            Back to landing
+          </button>
+        </div>
       </div>
     </section>
   );
