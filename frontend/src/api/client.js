@@ -1,12 +1,15 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 async function request(path, options = {}) {
+  const { authToken, ...fetchOptions } = options;
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
       'Content-Type': 'application/json',
-      ...options.headers
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...fetchOptions.headers
     },
-    ...options
+    ...fetchOptions
   });
 
   const contentType = response.headers.get('content-type') || '';
@@ -25,21 +28,13 @@ export const apiClient = {
   getHealth() {
     return request('/health');
   },
-  getExamples() {
-    return request('/example');
-  },
   getEvents() {
     return request('/events');
   },
-  registerForEvent(eventId) {
-    return request(`/events/${eventId}/register`, {
-      method: 'POST'
-    });
-  },
-  createExample(example) {
-    return request('/example', {
+  registerUser(account) {
+    return request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify(example)
+      body: JSON.stringify(account)
     });
   },
   login(credentials) {
@@ -48,10 +43,9 @@ export const apiClient = {
       body: JSON.stringify(credentials)
     });
   },
-  loginWithGoogle(token) {
-    return request('/auth/google', {
-      method: 'POST',
-      body: JSON.stringify({ token })
+  getCurrentUser(token) {
+    return request('/auth/me', {
+      authToken: token
     });
   }
 };

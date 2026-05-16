@@ -33,3 +33,6 @@ dist/
 
 # Docker
 docker-compose.override.yml
+
+# Ignore Local Reference Files
+reference/

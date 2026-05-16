@@ -12,38 +12,39 @@ public class UserDocument {
     @Id
     private String id;
 
+    private String firstName;
+
+    private String lastName;
+
     @Indexed(unique = true)
     private String email;
 
-    private String password;
+    private String passwordHash;
 
-    private String googleId;
-
-    private String displayName;
-
-    private String photoUrl;
-
-    private String authProvider;
+    private UserRole role;
 
     private Instant createdAt;
+
+    private Instant updatedAt;
 
     public UserDocument() {
     }
 
-    public UserDocument(String email, String password, Instant createdAt) {
+    public UserDocument(
+            String firstName,
+            String lastName,
+            String email,
+            String passwordHash,
+            UserRole role,
+            Instant createdAt,
+            Instant updatedAt) {
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.email = email;
-        this.password = password;
+        this.passwordHash = passwordHash;
+        this.role = role;
         this.createdAt = createdAt;
-        this.authProvider = "email";
-    }
-
-    public UserDocument(String email, String googleId, String displayName, String photoUrl, Instant createdAt) {
-        this.email = email;
-        this.googleId = googleId;
-        this.displayName = displayName;
-        this.photoUrl = photoUrl;
-        this.createdAt = createdAt;
-        this.authProvider = "google";
+        this.updatedAt = updatedAt;
     }
 
     public String getId() {
@@ -54,6 +55,22 @@ public class UserDocument {
         this.id = id;
     }
 
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
     public String getEmail() {
         return email;
     }
@@ -62,44 +79,20 @@ public class UserDocument {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
-    public String getGoogleId() {
-        return googleId;
+    public UserRole getRole() {
+        return role;
     }
 
-    public void setGoogleId(String googleId) {
-        this.googleId = googleId;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getPhotoUrl() {
-        return photoUrl;
-    }
-
-    public void setPhotoUrl(String photoUrl) {
-        this.photoUrl = photoUrl;
-    }
-
-    public String getAuthProvider() {
-        return authProvider;
-    }
-
-    public void setAuthProvider(String authProvider) {
-        this.authProvider = authProvider;
+    public void setRole(UserRole role) {
+        this.role = role;
     }
 
     public Instant getCreatedAt() {
@@ -108,5 +101,13 @@ public class UserDocument {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

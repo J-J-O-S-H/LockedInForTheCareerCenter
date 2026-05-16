@@ -29,6 +29,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -137,28 +138,28 @@ button:disabled {
   margin-bottom: 1.25rem;
 }
 
-.example-list {
+.item-list {
   display: grid;
   gap: 0.75rem;
 }
 
-.example-item {
+.list-item {
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   padding: 1rem;
 }
 
-.example-item h3 {
+.list-item h3 {
   color: var(--color-text-primary);
   font-size: 1rem;
   margin: 0 0 0.35rem;
 }
 
-.example-item p {
+.list-item p {
   margin: 0 0 0.5rem;
 }
 
-.example-item small,
+.list-item small,
 .muted {
   color: var(--color-text-muted);
 }
@@ -183,15 +184,18 @@ label {
 }
 
 input,
+select,
 textarea {
   border: 1px solid #cbd5e1;
   border-radius: 6px;
+  background: #ffffff;
   color: var(--color-text-primary);
   padding: 0.75rem;
   width: 100%;
 }
 
 input:focus,
+select:focus,
 textarea:focus {
   border-color: #0f766e;
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);

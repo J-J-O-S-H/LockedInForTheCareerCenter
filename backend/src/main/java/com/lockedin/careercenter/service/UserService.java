@@ -3,14 +3,13 @@ package com.lockedin.careercenter.service;
 import java.time.Instant;
 import java.util.Locale;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.lockedin.careercenter.dto.GoogleLoginRequest;
-import com.lockedin.careercenter.dto.LoginResponse;
+import com.lockedin.careercenter.dto.AuthResponse;
 import com.lockedin.careercenter.dto.UserLoginRequest;
+import com.lockedin.careercenter.dto.UserRegistrationRequest;
+import com.lockedin.careercenter.dto.UserResponse;
 import com.lockedin.careercenter.model.UserDocument;
 import com.lockedin.careercenter.repository.UserRepository;
 
@@ -18,77 +17,68 @@ import com.lockedin.careercenter.repository.UserRepository;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final String googleClientId;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public UserService(UserRepository userRepository, @Value("${app.google.client-id:}") String googleClientId) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
-        this.googleClientId = googleClientId;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
-    public LoginResponse login(UserLoginRequest request) {
-        String email = request.email().trim().toLowerCase(Locale.ROOT);
+    public AuthResponse register(UserRegistrationRequest request) {
+        String email = normalizeEmail(request.email());
+
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalStateException("An account with this email already exists.");
+        }
+
+        Instant now = Instant.now();
+        UserDocument user = new UserDocument(
+                request.firstName().trim(),
+                request.lastName().trim(),
+                email,
+                passwordEncoder.encode(request.password()),
+                request.role(),
+                now,
+                now);
+
+        UserDocument savedUser = userRepository.save(user);
+        return new AuthResponse(toResponse(savedUser), "Registration successful.", jwtService.createToken(savedUser));
+    }
+
+    public AuthResponse login(UserLoginRequest request) {
+        String email = normalizeEmail(request.email());
 
         UserDocument user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email or password."));
 
-        if (!user.getPassword().equals(request.password())) {
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid email or password.");
         }
 
-        return new LoginResponse(user.getEmail(), "Login successful.");
+        return new AuthResponse(toResponse(user), "Login successful.", jwtService.createToken(user));
     }
 
-    public LoginResponse loginWithGoogle(GoogleLoginRequest request) {
-        try {
-            DecodedJWT jwt = JWT.decode(request.token());
+    public UserResponse getCurrentUser(String userId) {
+        UserDocument user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Authenticated user no longer exists."));
 
-            String audience = jwt.getAudience() != null && !jwt.getAudience().isEmpty()
-                    ? jwt.getAudience().get(0)
-                    : null;
-
-            if (audience == null || !audience.equals(googleClientId)) {
-                throw new IllegalArgumentException("Invalid Google token audience.");
-            }
-
-            String email = jwt.getClaim("email").asString();
-            String googleId = jwt.getSubject();
-            String displayName = jwt.getClaim("name").asString();
-            String photoUrl = jwt.getClaim("picture").asString();
-
-            if (email == null || googleId == null) {
-                throw new IllegalArgumentException("Invalid Google token: missing email or subject.");
-            }
-
-            email = email.trim().toLowerCase(Locale.ROOT);
-
-            UserDocument user = userRepository.findByEmail(email)
-                    .orElse(null);
-
-            if (user == null) {
-                user = new UserDocument(email, googleId, displayName, photoUrl, Instant.now());
-            } else {
-                user.setGoogleId(googleId);
-                user.setDisplayName(displayName);
-                user.setPhotoUrl(photoUrl);
-                user.setAuthProvider("google");
-            }
-
-            userRepository.save(user);
-            return new LoginResponse(user.getEmail(), "Login successful.");
-
-        } catch (IllegalArgumentException ex) {
-            throw ex;
-        } catch (RuntimeException ex) {
-            throw new IllegalArgumentException("Invalid Google token: " + ex.getMessage());
-        }
+        return toResponse(user);
     }
 
-    public void seedInitialUser() {
-        if (userRepository.count() == 0) {
-            userRepository.save(new UserDocument(
-                    "returninguser@example.com",
-                    "Password123!",
-                    Instant.now()));
-        }
+    public UserResponse toResponse(UserDocument user) {
+        return new UserResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getCreatedAt(),
+                user.getUpdatedAt());
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }
